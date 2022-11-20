@@ -28,6 +28,13 @@ namespace UnityStandardAssets.Characters.FirstPerson
         [SerializeField] private AudioClip m_JumpSound;           // the sound played when character leaves the ground.
         [SerializeField] private AudioClip m_LandSound;           // the sound played when character touches back on ground.
 
+        PlayerControVR inputAction;
+        Vector2 move;
+        Vector2 rotate;
+        Rigidbody rb;
+        private float distanceToGround;
+        public float jump = 5f;
+
         private Camera m_Camera;
         private bool m_Jump;
         private float m_YRotation;
@@ -52,6 +59,16 @@ namespace UnityStandardAssets.Characters.FirstPerson
         // Use this for initialization
         private void Start()
         {
+            inputAction = new PlayerControVR();
+            inputAction = InputReader.controller.inputAction;
+            inputAction.Player.Jump.performed += cntxt => Jump();
+            inputAction.Player.Move.performed += cntxt => move = cntxt.ReadValue<Vector2>();
+            inputAction.Player.Move.canceled += cntxt => move = Vector2.zero;
+            inputAction.Player.Look.performed += cntxt => rotate = cntxt.ReadValue<Vector2>();
+            inputAction.Player.Look.canceled += cntxt => rotate = Vector2.zero;
+            rb = GetComponent<Rigidbody>();
+            distanceToGround = GetComponent<Collider>().bounds.extents.y;
+
             m_CharacterController = GetComponent<CharacterController>();
             m_Camera = Camera.main;
             m_OriginalCameraPosition = m_Camera.transform.localPosition;
@@ -62,6 +79,15 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_Jumping = false;
             m_AudioSource = GetComponent<AudioSource>();
 			m_MouseLook.Init(transform , m_Camera.transform);
+        }
+
+        private void Jump()
+        {
+            if (m_PreviouslyGrounded)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, jump);
+                m_PreviouslyGrounded = false;
+            }
         }
 
 
